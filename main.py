@@ -21,59 +21,34 @@ def _build_tool_handlers() -> dict[str, Callable[..., str]]:
 
 
 def run() -> None:
-    settings = get_settings()
+    _ = get_settings()
     ui = TerminalUI()
-    audio = AudioEngine(
-        picovoice_access_key=settings.picovoice_access_key,
-        wake_model_path=settings.wake_word_model_path,
-    )
+    audio = AudioEngine()
     core = GeminiCore(tool_handlers=_build_tool_handlers())
 
     ui.clear()
     ui.print_banner()
-    ui.print_muswin("Boot complete. Try not to waste my cycles.")
+    ui.print_muswin("Boot complete. Type /voice for microphone input or type normally.")
 
-    wake_ready = audio.start_wake_word()
-    if not wake_ready:
-        ui.print_warning(
-            "Wake word is disabled (missing PICOVOICE_ACCESS_KEY or WAKE_WORD_MODEL_PATH). "
-            "Text mode and push-to-talk still work."
-        )
+    while True:
+        user_text = input("You: ").strip()
+        if user_text.lower() in {"exit", "quit"}:
+            break
 
-    try:
-        while True:
-            # Wake-word path: user can press Enter to start a wake-word listen cycle.
-            if wake_ready:
-                cmd = input("Press Enter for wake-listen, type message, or 'exit': ").strip()
-                if cmd.lower() in {"exit", "quit"}:
-                    break
+        if user_text.lower() == "/voice":
+            ui.print_muswin("Speak now.")
+            user_text = audio.listen_once()
 
-                if not cmd:
-                    ui.print_muswin("Listening for wake word...")
-                    if audio.wait_for_wake_word():
-                        ui.print_muswin("Wake word detected. Say the command.")
-                        user_text = audio.listen_once()
-                    else:
-                        user_text = ""
-                else:
-                    user_text = cmd
-            else:
-                user_text = input("You: ").strip()
-                if user_text.lower() in {"exit", "quit"}:
-                    break
+        if not user_text:
+            ui.print_warning("No input captured.")
+            continue
 
-            if not user_text:
-                ui.print_warning("No input captured.")
-                continue
+        ui.print_user(user_text)
+        with ui.show_thinking():
+            reply = core.process_user_input(user_text)
 
-            ui.print_user(user_text)
-            with ui.show_thinking():
-                reply = core.process_user_input(user_text)
-
-            ui.print_muswin(reply)
-            audio.speak(reply)
-    finally:
-        audio.stop_wake_word()
+        ui.print_muswin(reply)
+        audio.speak(reply)
 
 
 if __name__ == "__main__":

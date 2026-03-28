@@ -2,11 +2,17 @@
 
 Terminal-first, voice-capable Windows assistant with a sarcastic persona.
 
-## Implemented Foundation (Current)
+## Architecture
 
-- `config.py` for environment-backed settings.
-- `brain/gemini_core.py` for Gemini initialization, system persona, chat memory, and tool-call routing.
-- `.env` as the active local secrets/config file.
+- `main.py` central loop.
+- `config.py` env-backed key and model config.
+- `brain/gemini_core.py` persona + session memory + function-call routing.
+- `interface/terminal_ui.py` rich UI (banner, colors, spinner).
+- `interface/audio_engine.py` free-library TTS and STT.
+- `tools/system_ops.py` app launching, folder cleaning, routines.
+- `tools/researcher.py` web research and markdown report generation.
+- `tools/detective.py` OSINT-style public footprint lookup.
+- `start_muswin.bat` startup launcher for Windows.
 
 ## Prerequisites
 
@@ -32,9 +38,17 @@ pip install -r requirements.txt
 3. Fill values in `.env`:
 
 - required: `GEMINI_API_KEY`
-- optional now: `PICOVOICE_ACCESS_KEY`, `SPOTIFY_CLIENT_ID`
+- optional: `SPOTIFY_CLIENT_ID`
 - optional: `GEMINI_MODEL_NAME` (default: `gemini-3.1-pro-preview`)
 - optional: `GEMINI_TTS_MODEL_NAME` (default: `gemini-2.5-flash-preview-tts`)
+
+## Run
+
+```powershell
+python main.py
+```
+
+Type your command directly, or use `/voice` to capture one microphone utterance.
 
 ## Quick Sanity Check
 
@@ -53,7 +67,17 @@ print(core.process_user_input("My codename is Ghost."))
 print(core.process_user_input("What codename did I just tell you?"))
 ```
 
+## Windows Startup Integration
+
+1. Keep `start_muswin.bat` in the project root.
+2. Open Task Scheduler.
+3. Create Basic Task -> name it `Muswin Startup`.
+4. Trigger: `When I log on`.
+5. Action: `Start a program` -> browse to `start_muswin.bat`.
+6. In task Properties, enable `Run whether user is logged on or not` if desired and set it to hidden/background behavior.
+
 ## Notes
 
 - If `GEMINI_API_KEY` is missing, `config.py` raises a clear startup error.
-- Tool calls are declared in Gemini core, but handlers are intentionally fallback-safe until the `tools/` modules are implemented.
+- Tool calls are declared in Gemini core and routed to concrete handlers in `tools/`.
+- This project uses `google.genai` (new SDK), not the deprecated `google.generativeai` package.
