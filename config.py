@@ -24,7 +24,8 @@ class Settings:
     gemini_api_key: str
     picovoice_access_key: str
     spotify_client_id: str
-    gemini_model_name: str = "gemini-1.5-flash"
+    gemini_model_name: str = "gemini-3.1-pro-preview"
+    gemini_tts_model_name: str = "gemini-2.5-flash-preview-tts"
 
 
 @lru_cache(maxsize=1)
@@ -44,15 +45,14 @@ def get_settings() -> Settings:
     gemini_api_key = os.getenv("GEMINI_API_KEY", "").strip()
     picovoice_access_key = os.getenv("PICOVOICE_ACCESS_KEY", "").strip()
     spotify_client_id = os.getenv("SPOTIFY_CLIENT_ID", "").strip()
-    gemini_model_name = os.getenv("GEMINI_MODEL_NAME", "gemini-1.5-flash").strip()
+    gemini_model_name = os.getenv("GEMINI_MODEL_NAME", "gemini-3.1-pro-preview").strip()
+    gemini_tts_model_name = os.getenv(
+        "GEMINI_TTS_MODEL_NAME", "gemini-2.5-flash-preview-tts"
+    ).strip()
 
     missing: list[str] = []
     if not gemini_api_key:
         missing.append("GEMINI_API_KEY")
-    if not picovoice_access_key:
-        missing.append("PICOVOICE_ACCESS_KEY")
-    if not spotify_client_id:
-        missing.append("SPOTIFY_CLIENT_ID")
 
     if missing:
         missing_csv = ", ".join(missing)
@@ -65,5 +65,6 @@ def get_settings() -> Settings:
         gemini_api_key=gemini_api_key,
         picovoice_access_key=picovoice_access_key,
         spotify_client_id=spotify_client_id,
-        gemini_model_name=gemini_model_name or "gemini-1.5-flash",
+        gemini_model_name=gemini_model_name or "gemini-3.1-pro-preview",
+        gemini_tts_model_name=gemini_tts_model_name or "gemini-2.5-flash-preview-tts",
     )

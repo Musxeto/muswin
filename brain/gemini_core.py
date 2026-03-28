@@ -5,7 +5,8 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any, Callable
 
-import google.generativeai as genai
+from google import genai
+from google.genai import types
 
 from config import get_settings
 
@@ -31,17 +32,18 @@ class GeminiCore:
 
     def __init__(self, tool_handlers: dict[str, Callable[..., str]] | None = None) -> None:
         self.settings = get_settings()
-        genai.configure(api_key=self.settings.gemini_api_key)
+        self._client = genai.Client(api_key=self.settings.gemini_api_key)
 
         self._tool_handlers = tool_handlers or {}
         self._tools = self._build_tool_declarations()
 
-        self._model = genai.GenerativeModel(
-            model_name=self.settings.gemini_model_name,
-            system_instruction=SYSTEM_PROMPT,
-            tools=self._tools,
+        self._chat = self._client.chats.create(
+            model=self.settings.gemini_model_name,
+            config=types.GenerateContentConfig(
+                system_instruction=SYSTEM_PROMPT,
+                tools=self._tools,
+            ),
         )
-        self._chat = self._model.start_chat(history=[])
 
     def process_user_input(self, text: str) -> str:
         """Send user text to Gemini and resolve optional tool calls."""
@@ -67,56 +69,56 @@ class GeminiCore:
         follow_up = self._chat.send_message(follow_up_prompt)
         return self._extract_text(follow_up)
 
-    def _build_tool_declarations(self) -> list[dict[str, Any]]:
+    def _build_tool_declarations(self) -> list[types.Tool]:
         """Declare tools Gemini is allowed to call."""
 
         return [
-            {
-                "function_declarations": [
-                    {
-                        "name": "open_app",
-                        "description": "Open a local Windows application by common name.",
-                        "parameters": {
-                            "type": "OBJECT",
+            types.Tool(
+                function_declarations=[
+                    types.FunctionDeclaration(
+                        name="open_app",
+                        description="Open a local Windows application by common name.",
+                        parameters={
+                            "type": "object",
                             "properties": {
                                 "app_name": {
-                                    "type": "STRING",
+                                    "type": "string",
                                     "description": "Human-friendly app name, e.g. vscode or spotify.",
                                 }
                             },
                             "required": ["app_name"],
                         },
-                    },
-                    {
-                        "name": "clean_directory",
-                        "description": "Sort files in a folder into categories.",
-                        "parameters": {
-                            "type": "OBJECT",
+                    ),
+                    types.FunctionDeclaration(
+                        name="clean_directory",
+                        description="Sort files in a folder into categories.",
+                        parameters={
+                            "type": "object",
                             "properties": {
                                 "path": {
-                                    "type": "STRING",
+                                    "type": "string",
                                     "description": "Absolute or user-relative directory path.",
                                 }
                             },
                             "required": ["path"],
                         },
-                    },
-                    {
-                        "name": "search_web",
-                        "description": "Research a topic and return summarized source text.",
-                        "parameters": {
-                            "type": "OBJECT",
+                    ),
+                    types.FunctionDeclaration(
+                        name="search_web",
+                        description="Research a topic and return summarized source text.",
+                        parameters={
+                            "type": "object",
                             "properties": {
                                 "query": {
-                                    "type": "STRING",
+                                    "type": "string",
                                     "description": "Search query to research.",
                                 }
                             },
                             "required": ["query"],
                         },
-                    },
+                    ),
                 ]
-            }
+            )
         ]
 
     def _extract_tool_calls(self, response: Any) -> list[dict[str, Any]]:
