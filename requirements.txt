@@ -7,3 +7,4 @@ PyAudio
 duckduckgo-search
 requests
 beautifulsoup4
+psutil

@@ -8,8 +8,9 @@ Terminal-first, voice-capable Windows assistant with a sarcastic persona.
 - `config.py` env-backed key and model config.
 - `brain/gemini_core.py` persona + session memory + function-call routing.
 - `interface/terminal_ui.py` rich UI (banner, colors, spinner).
-- `interface/audio_engine.py` free-library TTS and STT.
-- `tools/system_ops.py` app launching, folder cleaning, routines.
+- `interface/audio_engine.py` free-library TTS and always-on STT.
+- `interface/mic_overlay.py` always-on microphone animation window.
+- `tools/system_ops.py` app/file/folder/process/shell operations.
 - `tools/researcher.py` web research and markdown report generation.
 - `tools/detective.py` OSINT-style public footprint lookup.
 - `start_muswin.bat` startup launcher for Windows.
@@ -39,7 +40,8 @@ pip install -r requirements.txt
 
 - required: `GEMINI_API_KEY`
 - optional: `SPOTIFY_CLIENT_ID`
-- optional: `GEMINI_MODEL_NAME` (default: `gemini-3.1-pro-preview`)
+- optional: `MIC_DEVICE_INDEX` (integer index from `/mics` command)
+- optional: `GEMINI_MODEL_NAME` (default: `gemini-2.5-flash`)
 - optional: `GEMINI_TTS_MODEL_NAME` (default: `gemini-2.5-flash-preview-tts`)
 
 ## Run
@@ -48,7 +50,7 @@ pip install -r requirements.txt
 python main.py
 ```
 
-Type your command directly, or use `/voice` to capture one microphone utterance.
+Voice is always on in background. Type anytime, speak naturally, or use `/mics` to list available microphone devices.
 
 ## Quick Sanity Check
 
@@ -81,3 +83,4 @@ print(core.process_user_input("What codename did I just tell you?"))
 - If `GEMINI_API_KEY` is missing, `config.py` raises a clear startup error.
 - Tool calls are declared in Gemini core and routed to concrete handlers in `tools/`.
 - This project uses `google.genai` (new SDK), not the deprecated `google.generativeai` package.
+- If your selected model hits quota, Muswin automatically tries Flash fallback models instead of crashing.

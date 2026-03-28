@@ -23,7 +23,8 @@ class Settings:
 
     gemini_api_key: str
     spotify_client_id: str
-    gemini_model_name: str = "gemini-3.1-pro-preview"
+    mic_device_index: int | None = None
+    gemini_model_name: str = "gemini-2.5-flash"
     gemini_tts_model_name: str = "gemini-2.5-flash-preview-tts"
 
 
@@ -43,10 +44,18 @@ def get_settings() -> Settings:
 
     gemini_api_key = os.getenv("GEMINI_API_KEY", "").strip()
     spotify_client_id = os.getenv("SPOTIFY_CLIENT_ID", "").strip()
-    gemini_model_name = os.getenv("GEMINI_MODEL_NAME", "gemini-3.1-pro-preview").strip()
+    mic_device_index_raw = os.getenv("MIC_DEVICE_INDEX", "").strip()
+    gemini_model_name = os.getenv("GEMINI_MODEL_NAME", "gemini-2.5-flash").strip()
     gemini_tts_model_name = os.getenv(
         "GEMINI_TTS_MODEL_NAME", "gemini-2.5-flash-preview-tts"
     ).strip()
+
+    mic_device_index: int | None = None
+    if mic_device_index_raw:
+        try:
+            mic_device_index = int(mic_device_index_raw)
+        except ValueError:
+            mic_device_index = None
 
     missing: list[str] = []
     if not gemini_api_key:
@@ -62,6 +71,7 @@ def get_settings() -> Settings:
     return Settings(
         gemini_api_key=gemini_api_key,
         spotify_client_id=spotify_client_id,
-        gemini_model_name=gemini_model_name or "gemini-3.1-pro-preview",
+        mic_device_index=mic_device_index,
+        gemini_model_name=gemini_model_name or "gemini-2.5-flash",
         gemini_tts_model_name=gemini_tts_model_name or "gemini-2.5-flash-preview-tts",
     )
