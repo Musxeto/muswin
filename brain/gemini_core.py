@@ -5,8 +5,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any, Callable
 
-from google import genai
-from google.genai import types
+import google.generativeai as genai
 
 from config import get_settings
 
@@ -32,18 +31,17 @@ class GeminiCore:
 
     def __init__(self, tool_handlers: dict[str, Callable[..., str]] | None = None) -> None:
         self.settings = get_settings()
-        self._client = genai.Client(api_key=self.settings.gemini_api_key)
+        genai.configure(api_key=self.settings.gemini_api_key)
 
         self._tool_handlers = tool_handlers or {}
         self._tools = self._build_tool_declarations()
 
-        self._chat = self._client.chats.create(
-            model=self.settings.gemini_model_name,
-            config=types.GenerateContentConfig(
-                system_instruction=SYSTEM_PROMPT,
-                tools=self._tools,
-            ),
+        self._model = genai.GenerativeModel(
+            model_name=self.settings.gemini_model_name,
+            system_instruction=SYSTEM_PROMPT,
+            tools=self._tools,
         )
+        self._chat = self._model.start_chat(history=[])
 
     def process_user_input(self, text: str) -> str:
         """Send user text to Gemini and resolve optional tool calls."""
@@ -69,16 +67,16 @@ class GeminiCore:
         follow_up = self._chat.send_message(follow_up_prompt)
         return self._extract_text(follow_up)
 
-    def _build_tool_declarations(self) -> list[types.Tool]:
+    def _build_tool_declarations(self) -> list[dict[str, Any]]:
         """Declare tools Gemini is allowed to call."""
 
         return [
-            types.Tool(
-                function_declarations=[
-                    types.FunctionDeclaration(
-                        name="open_app",
-                        description="Open a local Windows application by common name.",
-                        parameters={
+            {
+                "function_declarations": [
+                    {
+                        "name": "open_app",
+                        "description": "Open a local Windows application by common name.",
+                        "parameters": {
                             "type": "object",
                             "properties": {
                                 "app_name": {
@@ -88,11 +86,11 @@ class GeminiCore:
                             },
                             "required": ["app_name"],
                         },
-                    ),
-                    types.FunctionDeclaration(
-                        name="clean_directory",
-                        description="Sort files in a folder into categories.",
-                        parameters={
+                    },
+                    {
+                        "name": "clean_directory",
+                        "description": "Sort files in a folder into categories.",
+                        "parameters": {
                             "type": "object",
                             "properties": {
                                 "path": {
@@ -102,11 +100,25 @@ class GeminiCore:
                             },
                             "required": ["path"],
                         },
-                    ),
-                    types.FunctionDeclaration(
-                        name="search_web",
-                        description="Research a topic and return summarized source text.",
-                        parameters={
+                    },
+                    {
+                        "name": "trigger_routine",
+                        "description": "Run a named routine made of multiple actions.",
+                        "parameters": {
+                            "type": "object",
+                            "properties": {
+                                "routine_name": {
+                                    "type": "string",
+                                    "description": "Routine label such as coding_mode.",
+                                }
+                            },
+                            "required": ["routine_name"],
+                        },
+                    },
+                    {
+                        "name": "search_web",
+                        "description": "Research a topic and return summarized source text.",
+                        "parameters": {
                             "type": "object",
                             "properties": {
                                 "query": {
@@ -116,9 +128,23 @@ class GeminiCore:
                             },
                             "required": ["query"],
                         },
-                    ),
+                    },
+                    {
+                        "name": "osint_lookup",
+                        "description": "Search public footprint traces for a username or email.",
+                        "parameters": {
+                            "type": "object",
+                            "properties": {
+                                "identity": {
+                                    "type": "string",
+                                    "description": "Username or email to investigate.",
+                                }
+                            },
+                            "required": ["identity"],
+                        },
+                    },
                 ]
-            )
+            }
         ]
 
     def _extract_tool_calls(self, response: Any) -> list[dict[str, Any]]:

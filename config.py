@@ -24,6 +24,7 @@ class Settings:
     gemini_api_key: str
     picovoice_access_key: str
     spotify_client_id: str
+    wake_word_model_path: str
     gemini_model_name: str = "gemini-3.1-pro-preview"
     gemini_tts_model_name: str = "gemini-2.5-flash-preview-tts"
 
@@ -43,8 +44,8 @@ def get_settings() -> Settings:
     load_dotenv(dotenv_path=env_path, override=False)
 
     gemini_api_key = os.getenv("GEMINI_API_KEY", "").strip()
-    picovoice_access_key = os.getenv("PICOVOICE_ACCESS_KEY", "").strip()
     spotify_client_id = os.getenv("SPOTIFY_CLIENT_ID", "").strip()
+    wake_word_model_path = os.getenv("WAKE_WORD_MODEL_PATH", "").strip()
     gemini_model_name = os.getenv("GEMINI_MODEL_NAME", "gemini-3.1-pro-preview").strip()
     gemini_tts_model_name = os.getenv(
         "GEMINI_TTS_MODEL_NAME", "gemini-2.5-flash-preview-tts"
@@ -63,8 +64,8 @@ def get_settings() -> Settings:
 
     return Settings(
         gemini_api_key=gemini_api_key,
-        picovoice_access_key=picovoice_access_key,
         spotify_client_id=spotify_client_id,
+        wake_word_model_path=wake_word_model_path,
         gemini_model_name=gemini_model_name or "gemini-3.1-pro-preview",
         gemini_tts_model_name=gemini_tts_model_name or "gemini-2.5-flash-preview-tts",
     )

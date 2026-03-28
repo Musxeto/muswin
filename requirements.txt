@@ -1,2 +1,10 @@
-google-genai
+google-generativeai
 python-dotenv
+rich
+pyttsx3
+SpeechRecognition
+pvporcupine
+PyAudio
+duckduckgo-search
+requests
+beautifulsoup4
